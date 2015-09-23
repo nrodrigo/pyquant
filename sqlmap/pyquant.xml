@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<queries>
+  <read id="get_symbols_to_update">
+select symbol, yahoo_symbol, job_run_date, start_time, end_time
+from job_run_log
+where (job_run_date is null or job_run_date &lt; curdate())
+  and enabled = 'Y';
+  </read>
+</queries>
