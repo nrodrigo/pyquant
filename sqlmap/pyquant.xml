@@ -1,9 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <queries>
-  <read id="get_symbols_to_update">
-select symbol, yahoo_symbol, job_run_date, start_time, end_time
+  <read id="get_update_close_list">
+select symbol, yahoo_symbol
 from job_run_log
-where (job_run_date is null or job_run_date &lt; curdate())
+where (close_current_asof is null or close_current_asof &lt; curdate())
   and enabled = 'Y';
   </read>
+  <read id="get_update_yesterday_vol_list">
+select symbol, yahoo_symbol
+from job_run_log
+where (volume_current_asof is null or volume_current_asof &lt; curdate() - interval 1 day)
+  and enabled = 'Y';
+  </read>
+  <read_single id="get_day" parameters="symbol,close_date">
+select *
+from historical_prices
+where symbol='{symbol}'
+  and close_date='{close_date}';
+  </read_single>
+  <write id="update_historical_price" parameters="symbol,close_date,open,high,low,close,volume">
+insert into historical_prices (symbol, close_date, open, high, low, close, volume) values
+('{symbol}', '{close_date}', {open}, {high}, {low}, {close}, {volume})
+on duplicate key update
+open=values(open), high=values(high), low=values(low), close=values(close), volume=values(volume)
+  </write>
+  <write id="update_yesterdays_vol" parameters="volume,symbol,close_date,adj_close">
+update historical_prices set volume={volume}, adj_close={adj_close}
+where symbol='{symbol}'
+  and close_date='{close_date}';
+  </write>
+  <write id="update_log_close" parameters="symbol,date">
+update job_run_log set close_current_asof='{date}'
+where symbol='{symbol}';
+  </write>
+  <write id="update_log_vol" parameters="symbol,date">
+update job_run_log set volume_current_asof='{date}'
+where symbol='{symbol}';
+  </write>
 </queries>
