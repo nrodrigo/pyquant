@@ -1,1 +1,1 @@
-30 20 * * * /usr/bin/python /home/ubuntu/pyquant/update_historical_prices.py
+30 13 * * * /usr/bin/python /home/ubuntu/pyquant/update_historical_prices.py
