@@ -33,7 +33,6 @@ class API_Stuff:
         if r.status_code==404:
             return None
         else: # Assume 200??
-            print r.text
             close_data = [s for s in r.text.splitlines() if s and not s.isspace()][1].split(",")
             return {
                 'open': round(float(close_data[1]), 2),

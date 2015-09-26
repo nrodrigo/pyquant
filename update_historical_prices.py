@@ -3,17 +3,21 @@ from lib.api_stuff import API_Stuff
 from time import strftime
 import datetime
 import json
+import os
 import sys
 
-today = datetime.datetime.now()
-yesterday = datetime.datetime.now() - datetime.timedelta(hours=24)
+#today = datetime.datetime.now()
+#yesterday = datetime.datetime.now() - datetime.timedelta(hours=24)
+
+today = datetime.datetime.now() - datetime.timedelta(hours=24)
+yesterday = datetime.datetime.now() - datetime.timedelta(hours=48)
 
 def date_handler(obj):
     return obj.isoformat() if hasattr(obj, 'isoformat') else obj
 
 api = API_Stuff()
 
-db = StupidDB()
+db = StupidDB(os.path.dirname(__file__)+'/config')
 res = db.read('pyquant', 'get_update_close_list')
 for r in res:
     close_data = api.yahoo_api_current(r['yahoo_symbol'])
