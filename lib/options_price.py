@@ -33,7 +33,7 @@ class Options_Price:
     #  r = risk-free interest rate
     #  v = volatility
     @staticmethod
-    def BlackSholes(CallPutFlag, S, X, T, r, v):
+    def BlackScholes(CallPutFlag, S, X, T, r, v):
         S = float(S)
         X = float(X)
         T = float(T)
