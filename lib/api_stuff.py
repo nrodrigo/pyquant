@@ -43,3 +43,5 @@ class API_Stuff:
                 'adj_close': round(float(close_data[6]), 2)
                 }
 
+    #def option_chain_current(self, symbol):
+

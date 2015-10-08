@@ -6,21 +6,22 @@ import json
 import os
 import sys
 
-#today = datetime.datetime.now()
-#yesterday = datetime.datetime.now() - datetime.timedelta(hours=24)
-
-today = datetime.datetime.now() - datetime.timedelta(hours=24)
-yesterday = datetime.datetime.now() - datetime.timedelta(hours=48)
+today = datetime.datetime.now()
+today = datetime.datetime.strptime('2015-10-07', '%Y-%m-%d').date()
+yesterday = datetime.datetime.now() - datetime.timedelta(hours=24)
 
 def date_handler(obj):
     return obj.isoformat() if hasattr(obj, 'isoformat') else obj
 
 api = API_Stuff()
 
-db = StupidDB(os.path.dirname(__file__)+'/config')
+# insert historical prices
+
+db = StupidDB(os.path.dirname(os.path.abspath(__file__))+'/config')
 res = db.read('pyquant', 'get_update_close_list')
 for r in res:
-    close_data = api.yahoo_api_current(r['yahoo_symbol'])
+    #close_data = api.yahoo_api_current(r['yahoo_symbol'])
+    close_data = api.yahoo_api_hist(r['yahoo_symbol'], today.strftime('%Y-%m-%d'))
     db.write('pyquant',
         'update_historical_price',
         symbol = r['symbol'],
@@ -36,6 +37,9 @@ for r in res:
         date = str(today)[:10]
         )
 
+# insert options chain prices
+
+sys.exit()
 """
 For some reason, yahoo doesn't supply volume data in api.yahoo_api_current
 Retrieving it here

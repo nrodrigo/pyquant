@@ -2,13 +2,20 @@
 <queries>
   <read id="get_update_close_list">
 select symbol, yahoo_symbol
-from job_run_log
+from job_list
 where (close_current_asof is null or close_current_asof &lt; curdate())
   and enabled = 'Y';
   </read>
+  <read id="get_update_options_list">
+select j.symbol,
+  t.weekly_symbol
+from job_list
+join tradier_weekly_symbol t on j.symbol = t.symbol
+where j.get_options = 'Y';
+  </read>
   <read id="get_update_yesterday_vol_list">
 select symbol, yahoo_symbol
-from job_run_log
+from job_list
 where (volume_current_asof is null or volume_current_asof &lt; curdate() - interval 1 day)
   and enabled = 'Y';
   </read>
@@ -24,17 +31,39 @@ insert into historical_prices (symbol, close_date, open, high, low, close, volum
 on duplicate key update
 open=values(open), high=values(high), low=values(low), close=values(close), volume=values(volume)
   </write>
+  <write id="update_historical_options_price" parameters="symbol,option_symbol,description,option_type,strike,bid,ask,open_interest,expiration_date">
+insert into historical_options_prices (
+    symbol,
+    option_symbol,
+    description,
+    option_type,
+    strike,
+    bid,
+    ask,
+    open_interest,
+    expiration_date
+) values (
+    '{symbol}',
+    '{option_symbol}',
+    '{description}',
+    '{option_type}',
+    {strike},
+    {bid},
+    {ask},
+    {open_interest},
+    '{expiration_date}')
+  </write>
   <write id="update_yesterdays_vol" parameters="volume,symbol,close_date,adj_close">
 update historical_prices set volume={volume}, adj_close={adj_close}
 where symbol='{symbol}'
   and close_date='{close_date}';
   </write>
   <write id="update_log_close" parameters="symbol,date">
-update job_run_log set close_current_asof='{date}'
+update job_list set close_current_asof='{date}'
 where symbol='{symbol}';
   </write>
   <write id="update_log_vol" parameters="symbol,date">
-update job_run_log set volume_current_asof='{date}'
+update job_list set volume_current_asof='{date}'
 where symbol='{symbol}';
   </write>
 </queries>
