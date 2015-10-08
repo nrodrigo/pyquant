@@ -18,8 +18,8 @@ api = API_Stuff()
 db = StupidDB(os.path.dirname(os.path.abspath(__file__))+'/config')
 res = db.read('pyquant', 'get_update_close_list')
 for r in res:
-    #close_data = api.yahoo_api_current(r['yahoo_symbol'])
-    close_data = api.yahoo_api_hist(r['yahoo_symbol'], today.strftime('%Y-%m-%d'))
+    close_data = api.yahoo_api_current(r['yahoo_symbol'])
+    #close_data = api.yahoo_api_hist(r['yahoo_symbol'], today.strftime('%Y-%m-%d'))
     db.write('pyquant',
         'update_historical_price',
         symbol = r['symbol'],

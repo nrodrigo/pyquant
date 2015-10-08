@@ -6,6 +6,10 @@ import os
 import sys
 import xmltodict
 
+"""
+Looks like the Tradier API call for /v1/markets/options/chains (sandbox version) is up-to-date by 1:50pm'ish PT
+"""
+
 class API_Stuff:
     def __init__(self):
         # Let's get the app's config
@@ -111,3 +115,17 @@ class API_Stuff:
                 'expiration_date': strike['expiration_date']
                 })
         return options_chain
+
+    def quote(self, symbol):
+        headers = {
+            'Authorization': 'Bearer %s' % self.cfg.tradier_token,
+            'Content-type': 'application/json'
+            }
+        r = requests.get(
+            'https://sandbox.tradier.com/v1/markets/timesales?symbol=%s' % (symbol),
+            headers=headers
+            )
+        print r.text
+        #res = xmltodict.parse(r.text)
+        #print json.dumps(res, indent=2)
+
