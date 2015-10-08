@@ -7,7 +7,6 @@ import os
 import sys
 
 today = datetime.datetime.now()
-today = datetime.datetime.strptime('2015-10-07', '%Y-%m-%d').date()
 yesterday = datetime.datetime.now() - datetime.timedelta(hours=24)
 
 def date_handler(obj):
@@ -16,7 +15,6 @@ def date_handler(obj):
 api = API_Stuff()
 
 # insert historical prices
-
 db = StupidDB(os.path.dirname(os.path.abspath(__file__))+'/config')
 res = db.read('pyquant', 'get_update_close_list')
 for r in res:
@@ -38,6 +36,20 @@ for r in res:
         )
 
 # insert options chain prices
+for r in db.read('pyquant', 'get_update_options_list'):
+    for rec in api.option_chain_current(r['symbol'], r['include_all_roots']):
+        db.write('pyquant', 'update_historical_options_price',
+            symbol = r['symbol'],
+            option_symbol = rec['option_symbol'],
+            trade_date = today.strftime('%Y-%m-%d'),
+            description = rec['description'],
+            option_type = rec['option_type'],
+            strike = rec['strike'],
+            bid = rec['bid'],
+            ask = rec['ask'],
+            open_interest = rec['open_interest'],
+            expiration_date = rec['expiration_date']
+            )
 
 sys.exit()
 """

@@ -1,10 +1,16 @@
+from config import Config
 import datetime
 import json
 import requests
+import os
+import sys
+import xmltodict
 
 class API_Stuff:
     def __init__(self):
-        pass
+        # Let's get the app's config
+        config_file = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))+'/config.txt'
+        self.cfg = Config(config_file)
 
     def google_api_current(self, symbol):
         r = requests.get("http://www.google.com/finance/info?q=NSE:%s" % symbol)
@@ -43,5 +49,41 @@ class API_Stuff:
                 'adj_close': round(float(close_data[6]), 2)
                 }
 
-    #def option_chain_current(self, symbol):
-
+    # Retrieve all options chains for all available expiration dates
+    def option_chain_current(self, symbol, include_all_roots):
+        headers = {
+            'Authorization': 'Bearer %s' % self.cfg.tradier_token,
+            'Content-type': 'application/json'
+            }
+        if include_all_roots == 'Y':
+            r = requests.get(
+                'https://sandbox.tradier.com/v1/markets/options/expirations?symbol=%s&includeAllRoots=true' % symbol,
+                headers=headers
+                )
+        else:
+            r = requests.get(
+                'https://sandbox.tradier.com/v1/markets/options/expirations?symbol=%s' % symbol,
+                headers=headers
+                )
+        option_exp = xmltodict.parse(r.text)
+        options_chain = list()
+        for exp_date in option_exp['expirations']['date']:
+            r = requests.get(
+                'https://sandbox.tradier.com/v1/markets/options/chains?symbol=%s&expiration=%s' % (symbol, exp_date),
+                headers=headers
+                )
+            chain_data = xmltodict.parse(r.text)
+            for strike in chain_data['options']['option']:
+                options_chain.append({
+                    'symbol': symbol,
+                    'option_symbol': strike['symbol'],
+                    'description': strike['description'],
+                    'option_type': strike['option_type'],
+                    'strike': strike['strike'],
+                    'bid': strike['bid'],
+                    'ask': strike['ask'],
+                    'open_interest': strike['open_interest'],
+                    'expiration_date': strike['expiration_date']
+                    })
+        return options_chain
+            
