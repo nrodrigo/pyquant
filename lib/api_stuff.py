@@ -50,7 +50,7 @@ class API_Stuff:
                 }
 
     # Retrieve all options chains for all available expiration dates
-    def option_chain_current(self, symbol, include_all_roots):
+    def options_chain_all(self, symbol, include_all_roots):
         headers = {
             'Authorization': 'Bearer %s' % self.cfg.tradier_token,
             'Content-type': 'application/json'
@@ -87,3 +87,27 @@ class API_Stuff:
                     })
         return options_chain
             
+    def options_chain(self, symbol, exp_date):
+        headers = {
+            'Authorization': 'Bearer %s' % self.cfg.tradier_token,
+            'Content-type': 'application/json'
+            }
+        r = requests.get(
+            'https://sandbox.tradier.com/v1/markets/options/chains?symbol=%s&expiration=%s' % (symbol, exp_date),
+            headers=headers
+            )
+        res = xmltodict.parse(r.text)
+        options_chain = list()
+        for strike in res['options']['option']:
+            options_chain.append({
+                'symbol': symbol,
+                'option_symbol': strike['symbol'],
+                'description': strike['description'],
+                'option_type': strike['option_type'],
+                'strike': strike['strike'],
+                'bid': strike['bid'],
+                'ask': strike['ask'],
+                'open_interest': strike['open_interest'],
+                'expiration_date': strike['expiration_date']
+                })
+        return options_chain

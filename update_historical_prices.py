@@ -37,7 +37,7 @@ for r in res:
 
 # insert options chain prices
 for r in db.read('pyquant', 'get_update_options_list'):
-    for rec in api.option_chain_current(r['symbol'], r['include_all_roots']):
+    for rec in api.option_chains_all(r['symbol'], r['include_all_roots']):
         db.write('pyquant', 'update_historical_options_price',
             symbol = r['symbol'],
             option_symbol = rec['option_symbol'],
