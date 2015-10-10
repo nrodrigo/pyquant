@@ -122,10 +122,12 @@ class API_Stuff:
             'Content-type': 'application/json'
             }
         r = requests.get(
+            #'https://sandbox.tradier.com/v1/markets/timesales?symbol=%s' % (symbol),
+            #'https://sandbox.tradier.com/v1/markets/quotes?symbols=%s' % (symbol),
+            #'https://sandbox.tradier.com/v1/markets/history?symbol=%s' % (symbol),
             'https://sandbox.tradier.com/v1/markets/timesales?symbol=%s' % (symbol),
             headers=headers
             )
-        print r.text
-        #res = xmltodict.parse(r.text)
-        #print json.dumps(res, indent=2)
+        res = xmltodict.parse(r.text)
+        print json.dumps(res, indent=2)
 

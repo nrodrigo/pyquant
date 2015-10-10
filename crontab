@@ -1,3 +1,3 @@
 MAILTO=norbinn@gmail.com
 
-30 15 * * * /usr/bin/python /home/ubuntu/pyquant/update_historical_prices.py
+52 18 * * * . $HOME/.profile; /usr/bin/python /home/ubuntu/pyquant/update_historical_prices.py
