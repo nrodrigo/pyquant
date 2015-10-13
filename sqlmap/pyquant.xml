@@ -6,6 +6,11 @@ from job_list
 where (close_current_asof is null or close_current_asof &lt; curdate())
   and enabled = 'Y';
   </read>
+  <read id="get_update_close_list_test">
+select symbol, yahoo_symbol
+from job_list
+where enabled = 'Y';
+  </read>
   <read id="get_update_options_list">
 select j.symbol,
   j.include_all_roots,
@@ -58,7 +63,7 @@ insert into historical_options_prices (
 on duplicate key update
 bid=values(bid), ask=values(ask), open_interest=values(open_interest)
   </write>
-  <write id="update_yesterdays_vol" parameters="volume,symbol,close_date,adj_close">
+  <write id="update_prevous_volume" parameters="volume,symbol,close_date,adj_close">
 update historical_prices set volume={volume}, adj_close={adj_close}
 where symbol='{symbol}'
   and close_date='{close_date}';
@@ -71,4 +76,15 @@ where symbol='{symbol}';
 update job_list set volume_current_asof='{date}'
 where symbol='{symbol}';
   </write>
+  <read_single id="previous_volume" parameters="symbol,date">
+select symbol, close_date, volume, adj_close
+from historical_prices
+where symbol = '{symbol}'
+  and close_date = (
+  select max(close_date) as max_close_date
+  from historical_prices
+  where symbol = '{symbol}'
+    and close_date &lt; '{date}'
+  limit 1);
+  </read_single>
 </queries>

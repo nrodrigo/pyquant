@@ -20,9 +20,12 @@ db = StupidDB(os.path.dirname(os.path.abspath(__file__))+'/config')
 res = db.read('pyquant', 'get_update_close_list')
 spx_active = True
 for r in res:
-    #close_data = api.yahoo_api_current(r['yahoo_symbol'])
-    close_data = api.yahoo_api_hist(r['yahoo_symbol'], today.strftime('%Y-%m-%d'))
+    close_data = api.yahoo_api_current(r['yahoo_symbol'])
+    #close_data = api.yahoo_api_hist(r['yahoo_symbol'], today.strftime('%Y-%m-%d'))
     if close_data is None:
+        if r['symbol']=='SPX':
+            spx_active = False
+    else:
         db.write('pyquant',
             'update_historical_price',
             symbol = r['symbol'],
@@ -33,15 +36,23 @@ for r in res:
             close = close_data['close'],
             volume = close_data['volume']
             )
-    else:
-        if r['symbol']=='SPX':
-            spx_active = False
     db.write('pyquant', 'update_log_close',
         symbol = r['symbol'],
         date = str(today)[:10]
         )
 
-            
+    # Update previous trading days volume if necessary
+    if r['symbol']!='VIX':
+        get_volume = db.read_single('pyquant', 'previous_volume', symbol = r['symbol'], date = str(today)[:10])
+        if int(get_volume['volume'])==0 or float(get_volume['adj_close'])==0.00:
+            vol_data = api.yahoo_api_hist(r['yahoo_symbol'], str(get_volume['close_date'])[:10])
+            db.write('pyquant', 'update_prevous_volume',
+                volume = vol_data['volume'],
+                symbol = r['symbol'],
+                close_date = get_volume['close_date'],
+                adj_close = vol_data['adj_close']
+                )
+
 # If it wasn't a trading day for SPX, then let's not pull the options chain
 if spx_active==False:
     sys.exit()
@@ -62,23 +73,3 @@ for r in db.read('pyquant', 'get_update_options_list'):
             expiration_date = rec['expiration_date']
             )
 
-sys.exit()
-"""
-For some reason, yahoo doesn't supply volume data in api.yahoo_api_current
-Retrieving it here
-"""
-res = db.read('pyquant', 'get_update_yesterday_vol_list')
-for r in res:
-    data = db.read_single('pyquant', 'get_day', symbol=r['symbol'], close_date=str(yesterday)[:10])
-    yest_close_data = api.yahoo_api_hist(r['yahoo_symbol'], str(yesterday)[:10])
-    if data is not None and ((data['volume']==0 and yest_close_data['volume']>0) or (data['adj_close']==0.00 and yest_close_data['adj_close']>0.00)):
-        db.write('pyquant', 'update_yesterdays_vol',
-            volume = yest_close_data['volume'],
-            symbol = r['symbol'],
-            adj_close = yest_close_data['adj_close'],
-            close_date = str(yesterday)[:10]
-            )
-    db.write('pyquant', 'update_log_vol',
-        symbol = r['symbol'],
-        date = str(yesterday)[:10]
-        )
