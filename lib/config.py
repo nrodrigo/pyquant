@@ -9,6 +9,8 @@ class Config:
         if os.path.isfile(config_file):
             lines = open(config_file).read().splitlines()
             for line in lines:
+                if line[:1]=='#':
+                    continue
                 if line:
                     get = line.split("=")
                     if get[0] and get[1]:

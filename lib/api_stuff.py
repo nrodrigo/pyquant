@@ -34,7 +34,8 @@ class API_Stuff:
             'volume': int(close_data['list']['resources'][0]['resource']['fields']['volume'])
             }
 
-    def yahoo_api_hist(self, symbol, date):
+    # Would like to use tradier, but for some reason they don't have volume and adj_close
+    def quote_hist(self, symbol, date):
         date_args = date.split('-')
         year = date_args[0]
         month = "%02d" % (int(date_args[1]) - 1)
@@ -55,29 +56,30 @@ class API_Stuff:
                 }
 
     # Retrieve all options chains for all available expiration dates
-    def options_chain_all(self, symbol, include_all_roots):
+    def options_chain_all(self, symbol, include_all_roots='N'):
         headers = {
             'Authorization': 'Bearer %s' % self.cfg.tradier_token,
             'Content-type': 'application/json'
             }
         if include_all_roots == 'Y':
             r = requests.get(
-                'https://sandbox.tradier.com/v1/markets/options/expirations?symbol=%s&includeAllRoots=true' % symbol,
+                'https://%s/v1/markets/options/expirations?symbol=%s&includeAllRoots=true' % (self.cfg.tradier_api, symbol),
                 headers=headers
                 )
         else:
             r = requests.get(
-                'https://sandbox.tradier.com/v1/markets/options/expirations?symbol=%s' % symbol,
+                'https://%s/v1/markets/options/expirations?symbol=%s' % (self.cfg.tradier_api, symbol),
                 headers=headers
                 )
         option_exp = xmltodict.parse(r.text)
         options_chain = list()
         for exp_date in option_exp['expirations']['date']:
             r = requests.get(
-                'https://sandbox.tradier.com/v1/markets/options/chains?symbol=%s&expiration=%s' % (symbol, exp_date),
+                'https://%s/v1/markets/options/chains?symbol=%s&expiration=%s' % (self.cfg.tradier_api, symbol, exp_date),
                 headers=headers
                 )
             chain_data = xmltodict.parse(r.text)
+            print json.dumps(chain_data, indent=2)
             for strike in chain_data['options']['option']:
                 options_chain.append({
                     'symbol': symbol,
@@ -98,7 +100,7 @@ class API_Stuff:
             'Content-type': 'application/json'
             }
         r = requests.get(
-            'https://sandbox.tradier.com/v1/markets/options/chains?symbol=%s&expiration=%s' % (symbol, exp_date),
+            'https://%s/v1/markets/options/chains?symbol=%s&expiration=%s' % (self.cfg.tradier_api, symbol, exp_date),
             headers=headers
             )
         res = xmltodict.parse(r.text)
@@ -123,12 +125,33 @@ class API_Stuff:
             'Content-type': 'application/json'
             }
         r = requests.get(
-            #'https://sandbox.tradier.com/v1/markets/timesales?symbol=%s' % (symbol),
-            #'https://sandbox.tradier.com/v1/markets/quotes?symbols=%s' % (symbol),
-            #'https://sandbox.tradier.com/v1/markets/history?symbol=%s' % (symbol),
-            'https://sandbox.tradier.com/v1/markets/timesales?symbol=%s' % (symbol),
+            #'https://%s/v1/markets/timesales?symbol=%s' % (self.cfg.tradier_api, symbol),
+            'https://%s/v1/markets/quotes?symbols=%s' % (self.cfg.tradier_api, symbol),
+            #'https://%s/v1/markets/history?symbol=%s' % (self.cfg.tradier_api, symbol),
+            #'https://%s/v1/markets/timesales?symbol=%s' % (self.cfg.tradier_api, symbol),
             headers=headers
             )
         res = xmltodict.parse(r.text)
-        print json.dumps(res, indent=2)
+        quote = res['quotes']['quote']
+        return {
+            'open': float(quote['open']),
+            'high': float(quote['high']),
+            'low': float(quote['low']),
+            'close': float(quote['last']),
+            'volume': int(quote['volume'])
+            }
 
+    def get_positions(self):
+        #headers = {
+        #    #'Authorization': 'Bearer %s' % self.cfg.tradier_token,
+        #    'Content-type': 'application/xml'
+        #    }
+        self._trademonster_auth()
+
+    def _trademonster_auth(self):
+        r = requests.post(
+            'https://%s/j_acegi_security_check' % (self.cfg.trademonster_api),
+            data='j_username=%s&j_password=%s' % (self.cfg.oh_username, self.cfg.oh_password)
+            )
+        for c in r.cookies:
+            print(c.name, c.value)

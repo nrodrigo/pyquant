@@ -20,8 +20,8 @@ db = StupidDB(os.path.dirname(os.path.abspath(__file__))+'/config')
 res = db.read('pyquant', 'get_update_close_list')
 spx_active = True
 for r in res:
-    close_data = api.yahoo_api_current(r['yahoo_symbol'])
-    #close_data = api.yahoo_api_hist(r['yahoo_symbol'], today.strftime('%Y-%m-%d'))
+    close_data = api.quote(r['symbol'])
+    #close_data = api.quote_hist(r['yahoo_symbol'], today.strftime('%Y-%m-%d'))
     if close_data is None:
         if r['symbol']=='SPX':
             spx_active = False
@@ -45,7 +45,7 @@ for r in res:
     if r['symbol']!='VIX':
         get_volume = db.read_single('pyquant', 'previous_volume', symbol = r['symbol'], date = str(today)[:10])
         if int(get_volume['volume'])==0 or float(get_volume['adj_close'])==0.00:
-            vol_data = api.yahoo_api_hist(r['yahoo_symbol'], str(get_volume['close_date'])[:10])
+            vol_data = api.quote_hist(r['yahoo_symbol'], str(get_volume['close_date'])[:10])
             db.write('pyquant', 'update_prevous_volume',
                 volume = vol_data['volume'],
                 symbol = r['symbol'],
