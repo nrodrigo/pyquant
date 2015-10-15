@@ -37,6 +37,12 @@ insert into historical_prices (symbol, close_date, open, high, low, close, volum
 on duplicate key update
 open=values(open), high=values(high), low=values(low), close=values(close), volume=values(volume)
   </write>
+  <write id="update_historical_price_adj" parameters="symbol,close_date,open,high,low,close,volume,adj_close">
+insert into historical_prices (symbol, close_date, open, high, low, close, volume, adj_close) values
+('{symbol}', '{close_date}', {open}, {high}, {low}, {close}, {volume}, {adj_close})
+on duplicate key update
+open=values(open), high=values(high), low=values(low), close=values(close), volume=values(volume), adj_close=values(adj_close)
+  </write>
   <write id="update_historical_options_price" parameters="symbol,option_symbol,trade_date,description,option_type,strike,bid,ask,open_interest,expiration_date">
 insert into historical_options_prices (
     symbol,

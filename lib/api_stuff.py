@@ -16,6 +16,10 @@ class API_Stuff:
         config_file = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))+'/config.txt'
         self.cfg = Config(config_file)
 
+        # Trademonster authorization object
+        self.tm_auth = None
+        self.tm_headers = None
+
     def google_api_current(self, symbol):
         r = requests.get("http://www.google.com/finance/info?q=NSE:%s" % symbol)
         return json.loads(''.join([x for x in r.text.splitlines() if x not in ('// [', ']')]))
@@ -79,7 +83,6 @@ class API_Stuff:
                 headers=headers
                 )
             chain_data = xmltodict.parse(r.text)
-            print json.dumps(chain_data, indent=2)
             for strike in chain_data['options']['option']:
                 options_chain.append({
                     'symbol': symbol,
@@ -133,25 +136,59 @@ class API_Stuff:
             )
         res = xmltodict.parse(r.text)
         quote = res['quotes']['quote']
-        return {
-            'open': float(quote['open']),
-            'high': float(quote['high']),
-            'low': float(quote['low']),
-            'close': float(quote['last']),
-            'volume': int(quote['volume'])
-            }
+        if quote['open'] is None:
+            return None
+        else:
+            return {
+                'open': float(quote['open']),
+                'high': float(quote['high']),
+                'low': float(quote['low']),
+                'close': float(quote['last']),
+                'volume': int(quote['volume'])
+                }
 
     def get_positions(self):
         #headers = {
         #    #'Authorization': 'Bearer %s' % self.cfg.tradier_token,
         #    'Content-type': 'application/xml'
         #    }
-        self._trademonster_auth()
+        if self.tm_auth is None:
+            self._trademonster_auth()
+
+        payload = """<getPositionsDetailNew><accountIds>%s</accountIds><accountId>%s</accountId><loadSimulated>true</loadSimulated><requireStrategy>false</requireStrategy><suppressOpenPnL>true</suppressOpenPnL><suppressDefaults>true</suppressDefaults><filter /></getPositionsDetailNew>""" % (self.tm_auth['userId'], self.tm_auth['userId'])
+        self.tm_headers['Content-Length'] = len(payload)
+        r = requests.post(
+            'https://%s/services/clientPositionService' % (self.cfg.trademonster_api),
+            data=payload,
+            headers=self.tm_headers
+            )
+        #print "content"
+        #from pprint import pprint
+        #pprint (vars(r))
+        print json.dumps(self.tm_auth, indent=2)
 
     def _trademonster_auth(self):
+        self.tm_auth = dict()
+        headers = {
+            'Host': self.cfg.public_ip,
+            'Authorization': 'Bearer %s' % self.cfg.tradier_token,
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8 Accept-Encoding: gzip,deflate,sdch',
+            'Accept-Language': 'en-US,en;q=0.8',
+            'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'User-Agent': 'alphatradr-pyquant/0.0.1'
+            }
         r = requests.post(
             'https://%s/j_acegi_security_check' % (self.cfg.trademonster_api),
-            data='j_username=%s&j_password=%s' % (self.cfg.oh_username, self.cfg.oh_password)
+            data='j_username=%s&j_password=%s' % (self.cfg.oh_username, self.cfg.oh_password),
+            headers=headers
             )
-        for c in r.cookies:
-            print(c.name, c.value)
+        if r.status_code==200:
+            response = json.loads(r.text)
+            self.tm_auth['session_id'] = response['sessionId']
+            self.tm_auth['token'] = response['token']
+            self.tm_auth['userId'] = response['userId']
+            self.tm_auth['userPermission'] = response['userPermission']
+            self.tm_auth['userResources'] = response['userResources']
+            self.tm_headers = headers
+            self.tm_headers['Cookie'] = 'JSESSIONID=%s' % self.tm_auth['session_id']
