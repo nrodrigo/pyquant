@@ -155,17 +155,32 @@ class API_Stuff:
         if self.tm_auth is None:
             self._trademonster_auth()
 
-        payload = """<getPositionsDetailNew><accountIds>%s</accountIds><accountId>%s</accountId><loadSimulated>true</loadSimulated><requireStrategy>false</requireStrategy><suppressOpenPnL>true</suppressOpenPnL><suppressDefaults>true</suppressDefaults><filter /></getPositionsDetailNew>""" % (self.tm_auth['userId'], self.tm_auth['userId'])
+        payload = """<getPositionsDetailNew>
+<accountIds>%s</accountIds>
+<accountId>%s</accountId>
+<loadSimulated>true</loadSimulated>
+<requireStrategy>false</requireStrategy>
+<suppressOpenPnL>true</suppressOpenPnL>
+<suppressDefaults>true</suppressDefaults>
+<filter />
+</getPositionsDetailNew>""" % (self.tm_auth['userId'], self.tm_auth['userId'])
+        print "...lbah..."
+        print payload
+        print "...lbah..."
         self.tm_headers['Content-Length'] = len(payload)
+        print json.dumps(self.tm_headers, indent=2)
+        print "...lbah..."
         r = requests.post(
             'https://%s/services/clientPositionService' % (self.cfg.trademonster_api),
             data=payload,
             headers=self.tm_headers
             )
-        #print "content"
-        #from pprint import pprint
-        #pprint (vars(r))
+        from pprint import pprint
+        pprint (vars(r))
+        print "...lbah..."
         print json.dumps(self.tm_auth, indent=2)
+        print "...lbah..."
+        print r.text
 
     def _trademonster_auth(self):
         self.tm_auth = dict()
